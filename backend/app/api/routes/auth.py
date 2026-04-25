@@ -41,17 +41,11 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
         is_active=False,
         is_verified=False,
     )
+    user.is_verified = True
+    user.is_active = True
     db.add(user)
     db.commit()
-    try:
-        await send_verification_email(body.email, body.username, body.language)
-    except Exception:
-        # SMTP not configured — activate user directly so system is usable without email setup
-        user.is_verified = True
-        user.is_active = True
-        db.commit()
-        return {"message": "Kayıt başarılı. (E-posta servisi yapılandırılmamış, hesap otomatik aktifleştirildi.)" if body.language == "tr" else "Registered. (Email service not configured, account activated automatically.)"}
-    return {"message": "Kayıt başarılı. E-postanızı kontrol edin." if body.language == "tr" else "Registered. Check your email."}
+    return {"message": "Kayıt başarılı!" if body.language == "tr" else "Registered successfully!"}
 
 
 @router.get("/verify-email")
