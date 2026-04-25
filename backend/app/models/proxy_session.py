@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Text, JSON
+from sqlalchemy import Column, String, Boolean, Integer, DateTime, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from .base import Base
@@ -17,9 +17,6 @@ class ProxySession(Base):
     proxy_password = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-
-from sqlalchemy import Integer
 
 
 class LinkedInSession(Base):
