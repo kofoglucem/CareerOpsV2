@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: careerops_postgres
+    environment:
+      POSTGRES_DB: careerops
+      POSTGRES_USER: careerops
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-careerops2024}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # 5433 externally to avoid conflicts
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: careerops_redis
+    ports:
+      - "6380:6379"  # 6380 externally to avoid conflicts
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: careerops_backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://careerops:${DB_PASSWORD:-careerops2024}@postgres:5432/careerops
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8001:8000"  # 8001 externally to avoid conflicts
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  celery_worker:
+    build: ./backend
+    container_name: careerops_celery
+    command: celery -A app.tasks.celery_app worker -Q linkedin --loglevel=info --concurrency=1
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://careerops:${DB_PASSWORD:-careerops2024}@postgres:5432/careerops
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+      - backend
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: careerops_frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://144.91.73.239:8001
+    ports:
+      - "3001:3000"  # 3001 externally to avoid conflicts
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
